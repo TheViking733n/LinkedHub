@@ -21,6 +21,11 @@
         <form method="POST" action="/signup/">
             {% csrf_token %}
             <div class="form-group">
+                <label for="username">Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            {% csrf_token %}
+            <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" class="form-control" id="username" name="username" required>
             </div>
