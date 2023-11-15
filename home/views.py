@@ -69,7 +69,7 @@ def logout(request):
 
 def profile(request, username):
     prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{username}"')[0]
-    posts = Post.objects.raw(f'SELECT * FROM post_post WHERE id IN ({prof.post_ids})')
+    posts = Post.objects.raw(f'SELECT * FROM post_post WHERE author_id = "{username}" ORDER BY timestamp DESC')
     connections = prof.connections.split(',')
     context = {
         'profile': prof,

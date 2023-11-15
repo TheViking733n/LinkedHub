@@ -13,11 +13,17 @@
         <div class="row">
             <div class="col-md-4">
                 <img src="{{ profile.profile_pic }}" alt="Profile Picture" class="img-fluid">
+
+                {% if request.user.username == profile.username %}
+                    <hr>
+                    <p><a href="/post/create" class="btn btn-primary">Post Something</a></p>
+                    <p><a href="/settings" class="btn btn-primary">Edit Profile</a></p>
+                {% endif %}
             </div>
             <div class="col-md-8">
                 <h2>{{ profile.name }}</h2>
-                <h4>@{{ profile.username }}</h4>
                 <p>{{ profile.bio }}</p>
+                <h4>@{{ profile.username }}</h4>
                 <hr>
                 <p>Connections: {{ connections }}</p>
                 {% if mutual_connections %}
@@ -30,7 +36,8 @@
                         <div class="card my-3">
                             <div class="card-body">
                                 <h5 class="card-title">{{ post.title }}</h5>
-                                <p class="card-text">{{ post.content }}</p>
+                                <p class="card-text">{{ post.content|linebreaks }}</p>
+                                <a href="/post/{{ post.post_id }}" class="btn btn-primary">View Post</a>
                             </div>
                         </div>
                     {% endfor %}
@@ -38,10 +45,6 @@
                     <p>No posts yet.</p>
                 {% endif %}
 
-                {% if request.user.username == profile.username %}
-                    <p><a href="/post/create" class="btn btn-primary">Post Something</a></p>
-                    <p><a href="/settings" class="btn btn-primary">Edit Profile</a></p>
-                {% endif %}
 
                 {% comment %} {% if not is_connected %}
                     <form action="{% url 'send_connection_request' profile.username %}" method="POST">
