@@ -35,12 +35,12 @@ def comment_post(request):
 def view_post(request, post_id):
     post = Post.objects.get(post_id=post_id)
     author = UserProfile.objects.get(username=post.author_id)
-    comments = []
-    for comment_id in post.comment_ids.split(','):
-        if comment_id != '':
-            comment = Comment.objects.get(comment_id=comment_id)
-            comments.append(comment)
+    # comments = []
+    # for comment_id in post.comment_ids.split(','):
+    #     if comment_id != '':
+    #         comment = Comment.objects.get(comment_id=comment_id)
+    #         comments.append(comment)
     
-    return render(request, 'view_post.html', {'post': post, 'author': author, 'comments': comments})
+    return render(request, 'view_post.html', {'post': post, 'author': author})
 
 

@@ -70,11 +70,11 @@ def logout(request):
 def profile(request, username):
     prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{username}"')[0]
     posts = Post.objects.raw(f'SELECT * FROM post_post WHERE author_id = "{username}" ORDER BY timestamp DESC')
-    connections = prof.connections.split(',')
+    # connections = prof.connections.split(',')
     context = {
         'profile': prof,
         'posts': posts,
-        'connections': connections,
+        # 'connections': connections,
     }
     if request.user.is_authenticated and request.user.username != username:
         mutual_connections = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"')[0].connections.split(',')
