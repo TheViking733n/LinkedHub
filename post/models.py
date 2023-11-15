@@ -7,6 +7,7 @@ class Post(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     author_id = models.CharField(max_length=100)
+    views = models.IntegerField(default=0)
     likes = models.IntegerField(default=0)
     comments = models.IntegerField(default=0)
     timestamp = models.DateTimeField(auto_now_add=True)
