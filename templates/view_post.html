@@ -18,7 +18,8 @@
                         <p class="card-text">{{ post.content|linebreaks }}</p>
                         <hr>
                         <p class="card-text">Author: <a href="/{{ post.author_id }}">{{ author.name }}</a></p>
-                        <p class="card-text">Likes: {{ post.likes }}</p>
+                        <p class="card-text">Likes: <span id="likes">{{ post.likes }}</span></p>
+                        <button id="likeBtn" class="btn btn-primary" onclick="likePost()">Like</button>
                         <p class="card-text">Comments:</p>
                         <ul class="list-group">
                             {% for comment_id in comments %}
@@ -27,12 +28,27 @@
                                 {% endif %}
                             {% endfor %}
                         </ul>
-
+                        
                         <p class="card-text"><small class="text-muted">{{ post.timestamp }}</small></p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        {% comment %} document.addEventListener('DOMContentLoaded', function() { {% endcomment %}
+            {% comment %} document.querySelector('#likeBtn').addEventListener('click', likePost); {% endcomment %}
+        {% comment %} }); {% endcomment %}
+
+        function likePost() {
+            const post_id = {{ post.post_id }};
+            fetch(`/post/like?item_type=post&item_id=${post_id}`)
+            .then(response => response.json())
+            .then(result => {
+                document.querySelector('#likes').innerHTML = result.likes;
+            });
+        }
+    </script>
 </body>
 </html>
