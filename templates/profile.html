@@ -36,7 +36,12 @@
                         <div class="card my-3">
                             <div class="card-body">
                                 <h5 class="card-title">{{ post.title }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ post.timestamp }}</h6>
+                                <hr>
                                 <p class="card-text">{{ post.content|linebreaks }}</p>
+                                <hr>
+                                <p class="card-title">Likes: {{ post.likes }}</p>
+                                <p class="card-title">Comments: {{ post.comments }}</p>
                                 <a href="/post/{{ post.post_id }}" class="btn btn-primary">View Post</a>
                             </div>
                         </div>

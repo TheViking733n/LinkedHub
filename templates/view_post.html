@@ -22,6 +22,9 @@
                         <p class="card-text">Likes: <span id="likes">{{ post.likes }}</span></p>
                         <button id="likeBtn" class="btn btn-primary" onclick="likePost()">Like</button>
                         <p class="card-text">{{ post.comments }} Comments</p>
+                        <p class="card-text"><small class="text-muted">{{ post.timestamp }}</small></p>
+                        <hr>
+
                         <form method="POST" action="/post/comment/">
                             {% csrf_token %}
                             <input type="hidden" name="post_id" value="{{ post.post_id }}">
@@ -34,7 +37,7 @@
                                     <li class="list-group-item">
                                         <p>{{ comment.content|linebreaks }}</p>
                                         <p>By: <a href="/{{ comment.author_id }}">{{ comment.name }}</a></p>
-                                        <p>{{ comment.timestamp }}</p>
+                                        <p><small class="text-muted">{{ comment.timestamp }}</small></p>
                                         <p>Likes: <span id="comments-likes-{{ comment.comment_id }}">{{ comment.likes }}</span></p>
                                         <button class="btn btn-primary" onclick="likeComment({{ comment.comment_id }})">Like</button>
                                     </li>
@@ -42,7 +45,7 @@
                             {% endfor %}
                         </ul>
                         
-                        <p class="card-text"><small class="text-muted">{{ post.timestamp }}</small></p>
+                        
                     </div>
                 </div>
             </div>
