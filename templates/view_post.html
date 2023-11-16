@@ -18,13 +18,26 @@
                         <p class="card-text">{{ post.content|linebreaks }}</p>
                         <hr>
                         <p class="card-text">Author: <a href="/{{ post.author_id }}">{{ author.name }}</a></p>
+                        <p class="card-text">Views: {{ post.views }}</p>
                         <p class="card-text">Likes: <span id="likes">{{ post.likes }}</span></p>
                         <button id="likeBtn" class="btn btn-primary" onclick="likePost()">Like</button>
-                        <p class="card-text">Comments:</p>
+                        <p class="card-text">{{ post.comments }} Comments</p>
+                        <form method="POST" action="/post/comment/">
+                            {% csrf_token %}
+                            <input type="hidden" name="post_id" value="{{ post.post_id }}">
+                            <textarea rows="3" cols="50" name="content" id="commentContent" placeholder="Add a comment..."></textarea>
+                            <button type="submit" id="commentBtn" class="btn btn-primary">Comment</button>
+                        </form>
                         <ul class="list-group">
-                            {% for comment_id in comments %}
-                                {% if comment_id %}
-                                    <li class="list-group-item">{{ comment_id }}</li>
+                            {% for comment in comments %}
+                                {% if comment %}
+                                    <li class="list-group-item">
+                                        <p>{{ comment.content|linebreaks }}</p>
+                                        <p>By: <a href="/{{ comment.author_id }}">{{ comment.name }}</a></p>
+                                        <p>{{ comment.timestamp }}</p>
+                                        <p>Likes: <span id="comments-likes-{{ comment.comment_id }}">{{ comment.likes }}</span></p>
+                                        <button class="btn btn-primary" onclick="likeComment({{ comment.comment_id }})">Like</button>
+                                    </li>
                                 {% endif %}
                             {% endfor %}
                         </ul>
@@ -49,6 +62,25 @@
                 document.querySelector('#likes').innerHTML = result.likes;
             });
         }
+
+        function likeComment(comment_id) {
+            fetch(`/post/like?item_type=comment&item_id=${comment_id}`)
+            .then(response => response.json())
+            .then(result => {
+                document.querySelector(`#comments-likes-${comment_id}`).innerHTML = result.likes;
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('#commentBtn').disabled = true;
+            document.querySelector('#commentContent').onkeyup = () => {
+                if (document.querySelector('#commentContent').value.length > 0) {
+                    document.querySelector('#commentBtn').disabled = false;
+                } else {
+                    document.querySelector('#commentBtn').disabled = true;
+                }
+            }
+        });
     </script>
 </body>
 </html>

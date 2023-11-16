@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from django.contrib.auth.decorators import login_required
 from home.models import UserProfile
 from post.models import Post, Comment, Like
+from django.db import connection
 
 # Create your views here.
 
@@ -59,7 +60,10 @@ def like_comment(request):   # like or unlike a comment
         comment.likes += 1
         comment.save()
     comment = Comment.objects.raw(f'SELECT * FROM post_comment WHERE comment_id={comment_id}')[0]
-    return HttpResponse(comment.likes)
+    res = {
+        'likes': comment.likes,
+    }
+    return JsonResponse(res)
 
 
 @login_required
@@ -91,13 +95,41 @@ def comment_post(request):    # comment on a post
 def view_post(request, post_id):
     post = Post.objects.get(post_id=post_id)
     author = UserProfile.objects.get(username=post.author_id)
+    post.views += 1
+    post.save()
     # comments = []
     # for comment_id in post.comment_ids.split(','):
     #     if comment_id != '':
     #         comment = Comment.objects.get(comment_id=comment_id)
     #         comments.append(comment)
-    comments = Comment.objects.raw(f'SELECT * FROM post_comment WHERE post_id={post_id} ORDER BY likes DESC')
+    # comments = Comment.objects.raw(f'SELECT * FROM post_comment WHERE post_id={post_id} ORDER BY likes DESC')
+    # commenters = []
+    # for comment in comments:
+    #     commenters.append(UserProfile.objects.get(username=comment.author_id))
     
+    cursor = connection.cursor()
+    cursor.execute(f'''
+        SELECT comment_id, post_id, content, author_id, likes, timestamp, name FROM post_comment
+        LEFT JOIN home_userprofile
+        ON post_comment.author_id = home_userprofile.username
+        WHERE post_id={post_id}
+        ORDER BY likes DESC;
+    ''')
+
+    comments = []
+    for row in cursor.fetchall():
+        comment = {
+            'comment_id': row[0],
+            'post_id': row[1],
+            'content': row[2],
+            'author_id': row[3],
+            'likes': row[4],
+            'timestamp': row[5],
+            'name': row[6],
+        }
+        comments.append(comment)
+    # print(comments)
+
     return render(request, 'view_post.html', {'post': post, 'author': author, 'comments': comments})
 
 
