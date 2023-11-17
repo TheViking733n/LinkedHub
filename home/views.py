@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
-from home.models import UserProfile
+from home.models import UserProfile, Connection, PendingRequest
 from post.models import Post
+from django.db import connection as db_connection
 
 # Create your views here.
 
@@ -71,16 +72,139 @@ def profile(request, username):
     prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{username}"')[0]
     posts = Post.objects.raw(f'SELECT * FROM post_post WHERE author_id = "{username}" ORDER BY timestamp DESC')
     # connections = prof.connections.split(',')
+    connections = Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{username}"')
+    connections = len(connections)
     context = {
         'profile': prof,
         'posts': posts,
-        # 'connections': connections,
+        'connections': connections,
     }
     if request.user.is_authenticated and request.user.username != username:
-        mutual_connections = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"')[0].connections.split(',')
+        # mutual_connections = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"')[0].connections.split(',')
+        mutual_connections = ['Not yet implemented.']
         context['mutual_connections'] = mutual_connections
+        conn_status = 'not connected'
+        if PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{request.user.username}" AND receiver = "{username}"'):
+            conn_status = 'pending'
+        elif PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{username}" AND receiver = "{request.user.username}"'):
+            conn_status = 'requested'
+        elif Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{username}"'):
+            conn_status = 'connected'
+        context['conn_status'] = conn_status
 
+    if request.user.is_authenticated and request.user.username == username:
+        ...
+        # pending_requests = PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE receiver = "{username}"')
+
+        with db_connection.cursor() as cursor:
+            cursor.execute(f'''
+                SELECT sender, name
+                FROM home_pendingrequest
+                LEFT JOIN home_userprofile
+                ON sender = username
+                WHERE receiver = "{request.user.username}";
+            ''')
+
+            pending_requests = []
+            for row in cursor.fetchall():
+                pending_request = {
+                    'sender': row[0],
+                    'name': row[1],
+                }
+                pending_requests.append(pending_request)
+        context['pending_requests'] = pending_requests
+    
     return render(request, 'profile.html', context)
+
+
+
+@login_required
+def connect_request(request):
+    if request.method == 'POST':
+        sender = request.user.username
+        receiver = request.POST['receiver']
+        if sender == receiver:
+            return HttpResponse('Error: Cannot send request to yourself.')
+        if Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{sender}" AND user2 = "{receiver}"'):
+            return HttpResponse('Error: Already connected.')
+        if PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'):
+            return HttpResponse('Error: Request already sent.')
+        if PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{receiver}" AND receiver = "{sender}"'):
+            return HttpResponse('Error: Request already received.')
+        if receiver not in User.objects.all().values_list('username', flat=True):
+            return HttpResponse('Error: Invalid username.')
+        pending_request = PendingRequest.objects.create(sender=sender, receiver=receiver)
+        pending_request.save()
+        return redirect('profile', username=receiver)
+    return HttpResponse('403 Forbidden')
+        
+
+@login_required
+def connect_accept(request):
+    if request.method == 'POST':
+        sender = request.POST['sender']
+        receiver = request.user.username
+        if sender == receiver:
+            return HttpResponse('Error: Cannot accept request from yourself.')
+        if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'):
+            return HttpResponse('Error: Request not found.')
+        connection = Connection.objects.create(user1=sender, user2=receiver)
+        connection = Connection.objects.create(user1=receiver, user2=sender)
+        connection.save()
+        with db_connection.cursor() as cursor:
+            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"')
+        
+        return redirect('profile', username=sender)
+    return HttpResponse('403 Forbidden')
+
+
+
+@login_required
+def cancel_request(request):
+    if request.method == 'POST':
+        sender = request.user.username
+        receiver = request.POST['receiver']
+        if sender == receiver:
+            return HttpResponse('Error: Cannot cancel request to yourself.')
+        if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'):
+            return HttpResponse('Error: Request not found.')
+        with db_connection.cursor() as cursor:
+            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"')
+        return redirect('profile', username=receiver)
+    return HttpResponse('403 Forbidden')
+
+
+@login_required
+def connect_reject(request):
+    if request.method == 'POST':
+        sender = request.POST['sender']
+        receiver = request.user.username
+        if sender == receiver:
+            return HttpResponse('Error: Cannot reject request from yourself.')
+        if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'):
+            return HttpResponse('Error: Request not found.')
+        with db_connection.cursor() as cursor:
+            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"')
+        return redirect('profile', username=sender)
+
+
+
+@login_required
+def connect_remove(request):
+    if request.method == 'POST':
+        user1 = request.user.username
+        user2 = request.POST['receiver']
+        if user1 == user2:
+            return HttpResponse('Error: Cannot remove yourself.')
+        if not Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{user1}" AND user2 = "{user2}"'):
+            return HttpResponse('Error: Connection not found.')
+        with db_connection.cursor() as cursor:
+            cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{user1}" AND user2 = "{user2}"')
+            cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{user2}" AND user2 = "{user1}"')
+        return redirect('profile', username=user2)
+
+
+
 
 @login_required
 def settings(request):

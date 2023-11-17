@@ -1,3 +1,4 @@
+{% load tz %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,6 +19,23 @@
                     <hr>
                     <p><a href="/post/create" class="btn btn-primary">Post Something</a></p>
                     <p><a href="/settings" class="btn btn-primary">Edit Profile</a></p>
+
+                    {% for pending_request in pending_requests %}
+                        <div class="card my-3">
+                            <p><a href="/{{ pending_request.sender }}">{{ pending_request.name }}</a> wants to connect with you.</p>
+                            <form action="/connect_accept/" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="sender" value="{{ pending_request.sender }}">
+                                <button type="submit" class="btn btn-success">Accept Request</button>
+                            </form>
+                            <form action="/connect_reject/" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="sender" value="{{ pending_request.sender }}">
+                                <button type="submit" class="btn btn-danger">Reject Request</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+
                 {% endif %}
             </div>
             <div class="col-md-8">
@@ -26,6 +44,43 @@
                 <h4>@{{ profile.username }}</h4>
                 <hr>
                 <p>Connections: {{ connections }}</p>
+
+                {% if conn_status == 'not connected' %}
+                    <p>Connection Status: Not Connected</p>
+                    <form action="/connect_request/" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="receiver" value="{{ profile.username }}">
+                        <button type="submit" class="btn btn-primary">Connect</button>
+                    </form>
+                {% elif conn_status == 'pending' %}
+                    <p>Connection Status: Pending</p>
+                    <form action="/cancel_request/" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="receiver" value="{{ profile.username }}">
+                        <button type="submit" class="btn btn-danger">Cancel Request</button>
+                    </form>
+                {% elif conn_status == 'requested' %}
+                    <p>Connection Status: Requested</p>
+                    <form action="/connect_accept/" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="sender" value="{{ profile.username }}">
+                        <button type="submit" class="btn btn-success">Accept Request</button>
+                    </form>
+                    <form action="/connect_reject/" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="sender" value="{{ profile.username }}">
+                        <button type="submit" class="btn btn-danger">Reject Request</button>
+                    </form>
+                {% elif conn_status == 'connected' %}
+                    <p>Connection Status: Connected</p>
+                    <form action="/connect_remove/" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="receiver" value="{{ profile.username }}">
+                        <button type="submit" class="btn btn-danger">Remove Connection</button>
+                    </form>
+                {% endif %}
+
+
                 {% if mutual_connections %}
                     <p>Mutual Connections: {{ mutual_connections }}</p>
                 {% endif %}
@@ -36,7 +91,7 @@
                         <div class="card my-3">
                             <div class="card-body">
                                 <h5 class="card-title">{{ post.title }}</h5>
-                                <h6 class="card-subtitle mb-2 text-muted">{{ post.timestamp }}</h6>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ post.timestamp|timezone:"Asia/Kolkata" }}</h6>
                                 <hr>
                                 <p class="card-text">{{ post.content|linebreaks }}</p>
                                 <hr>
