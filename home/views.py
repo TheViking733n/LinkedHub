@@ -224,7 +224,7 @@ def settings(request):
                 'status': 'warning'
             }
             return render(request, 'settings.html', context)
-        elif UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{organization}"'):
+        elif organization == '' or UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{organization}"'):
             prof.organization = organization
             prof.save()
         else:
