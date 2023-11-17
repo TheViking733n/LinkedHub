@@ -214,7 +214,28 @@ def settings(request):
         name = request.POST['name']
         email = request.POST['email']
         bio = request.POST['bio']
+        organization = request.POST['organization']
         image_base64 = request.POST['image_base64']
+
+        if organization == request.user.username:
+            context = {
+                'profile': prof,
+                'message': 'Error: Organization cannot be your own username.',
+                'status': 'warning'
+            }
+            return render(request, 'settings.html', context)
+        elif UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{organization}"'):
+            prof.organization = organization
+            prof.save()
+        else:
+            context = {
+                'profile': prof,
+                'message': 'Error: Organization does not exist.',
+                'status': 'warning'
+            }
+            return render(request, 'settings.html', context)
+
+
         if request.user.email != email:
             if email in User.objects.all().values_list('email', flat=True):
                 context = {
@@ -225,6 +246,7 @@ def settings(request):
                 return render(request, 'settings.html', context)
 
             request.user.email = email
+            request.user.save()
 
         request.user.first_name = name
         request.user.save()
@@ -233,7 +255,7 @@ def settings(request):
         prof.name = name
         prof.bio = bio
         prof.profile_pic = image_base64
-        print(image_base64)
+        # print(image_base64)
         prof.save()
 
         context = {

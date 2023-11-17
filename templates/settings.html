@@ -30,6 +30,10 @@
             <textarea value="{{ profile.bio }}" name="bio" id="bio" class="form-control"></textarea>
         </div>
         <div class="mb-3">
+            <label for="organization" class="form-label">Organization:</label>
+            <input value="{{ profile.organization }}" name="organization" id="organization" class="form-control">
+        </div>
+        <div class="mb-3">
             <label for="profile_pic" class="form-label">Profile Picture:</label>
             {% if profile.profile_pic %}
                 <img src="{{ profile.profile_pic }}" alt="" class="img-fluid" style="width: 100px;">
