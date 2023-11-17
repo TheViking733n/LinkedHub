@@ -92,6 +92,30 @@ def comment_post(request):    # comment on a post
 
 
 @login_required
+def delete_item(request):
+    if request.method == 'POST':
+        item_type = request.POST['item_type']
+        item_id = request.POST['item_id']
+        if item_type == 'post':
+            post = Post.objects.get(post_id=item_id)
+            if not post or post.author_id != request.user.username:
+                return HttpResponse('You are not authorized to delete this post.')
+            post.delete()
+            return redirect('profile', username=request.user.username)
+        
+        elif item_type == 'comment':
+            comment = Comment.objects.get(comment_id=item_id)
+            if not comment or comment.author_id != request.user.username:
+                return HttpResponse('You are not authorized to delete this comment.')
+            comment.delete()
+            return redirect('view_post', post_id=comment.post_id)
+
+        return HttpResponse('Invalid item type.')
+    
+    return HttpResponse('403 Forbidden')
+
+
+@login_required
 def view_post(request, post_id):
     post = Post.objects.get(post_id=post_id)
     author = UserProfile.objects.get(username=post.author_id)

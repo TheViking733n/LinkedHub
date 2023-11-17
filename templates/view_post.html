@@ -23,6 +23,15 @@
                         <button id="likeBtn" class="btn btn-primary" onclick="likePost()">Like</button>
                         <p class="card-text">{{ post.comments }} Comments</p>
                         <p class="card-text"><small class="text-muted">{{ post.timestamp }}</small></p>
+                        {% if post.author_id == request.user.username %}
+                            <form method="POST" action="/post/delete/">
+                                {% csrf_token %}
+                                <input type="hidden" name="item_id" value="{{ post.post_id }}">
+                                <input type="hidden" name="item_type" value="post">
+                                <button type="submit" class="btn btn-danger">Delete Post</button>
+                            </form>
+                        {% endif %}
+                        
                         <hr>
 
                         <form method="POST" action="/post/comment/">
@@ -40,6 +49,14 @@
                                         <p><small class="text-muted">{{ comment.timestamp }}</small></p>
                                         <p>Likes: <span id="comments-likes-{{ comment.comment_id }}">{{ comment.likes }}</span></p>
                                         <button class="btn btn-primary" onclick="likeComment({{ comment.comment_id }})">Like</button>
+                                        {% if comment.author_id == request.user.username %}
+                                            <form method="POST" action="/post/delete/">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="item_id" value="{{ comment.comment_id }}">
+                                                <input type="hidden" name="item_type" value="comment">
+                                                <button type="submit" class="btn btn-danger">Delete Comment</button>
+                                            </form>
+                                        {% endif %}
                                     </li>
                                 {% endif %}
                             {% endfor %}
