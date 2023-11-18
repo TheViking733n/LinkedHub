@@ -8,6 +8,7 @@ class UserProfile(models.Model):
     profile_pic = models.TextField(blank=True)
     bio = models.TextField(blank=True)
     organization = models.CharField(max_length=100, blank=True)
+    is_organization = models.BooleanField(default=False)
     
     def __str__(self):
         return self.username
