@@ -56,7 +56,7 @@
                 <hr>
                 <p>Connections: {{ connections }}</p>
 
-                {% if conn_status == 'not connected' %}
+                {% if conn_status == 'not connected' and profile.is_organization == 0 %}
                     <p>Connection Status: Not Connected</p>
                     <form action="/connect_request/" method="POST">
                         {% csrf_token %}

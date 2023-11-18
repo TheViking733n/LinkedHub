@@ -29,10 +29,19 @@
             <label for="bio" class="form-label">Bio:</label>
             <textarea value="{{ profile.bio }}" name="bio" id="bio" class="form-control"></textarea>
         </div>
-        <div class="mb-3">
+        {% comment %} <div class="mb-3">
             <label for="organization" class="form-label">Organization:</label>
             <input value="{{ profile.organization }}" name="organization" id="organization" class="form-control">
+        </div> {% endcomment %}
+        <div class="mb-3">
+            <label for="organization" class="form-label">Organization:</label>
+            <select name="organization">
+                {% for organization in organizations %}
+                    <option value="{{ organization.username }}" {% if profile.organization == organization.username %} selected {% endif %}>{{ organization.name }}</option>
+                {% endfor %}
+            </select>
         </div>
+                
         <div class="mb-3">
             <label for="profile_pic" class="form-label">Profile Picture:</label>
             {% if profile.profile_pic %}

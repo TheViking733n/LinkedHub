@@ -23,6 +23,11 @@ def signup(request):
         email = request.POST['email']
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
+        is_organization = request.POST.get('is_organization')
+        if is_organization:
+            is_organization = True
+        else:
+            is_organization = False
         messages = []
         if len(username) < 3:
             messages.append('Username must be at least 3 characters long.')
@@ -38,7 +43,8 @@ def signup(request):
         
         user = User.objects.create_user(first_name=name, username=username, email=email, password=password1)
         user_profile = UserProfile.objects.create(name=name, username=username)
-
+        user_profile.is_organization = is_organization
+        user_profile.save()
         user.save()
         return redirect('login')
     
@@ -215,6 +221,7 @@ def connect_remove(request):
 @login_required
 def settings(request):
     prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"')[0]
+    organizations = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE is_organization = 1 AND username != "{request.user.username}"')
     
     if request.method == 'POST':
         name = request.POST['name']
@@ -226,16 +233,29 @@ def settings(request):
         if organization == request.user.username:
             context = {
                 'profile': prof,
+                'organizations': organizations,
                 'message': 'Error: Organization cannot be your own username.',
                 'status': 'warning'
             }
             return render(request, 'settings.html', context)
         elif organization == '' or UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{organization}"'):
+            # remove connection from previous organization
+            if Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{prof.organization}"'):
+                with db_connection.cursor() as cursor:
+                    cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{prof.organization}"')
+                    cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{prof.organization}" AND user2 = "{request.user.username}"')
+            # add connection to new organization
+            if not Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{organization}"'):
+                connection = Connection.objects.create(user1=request.user.username, user2=organization)
+                connection.save()
+                connection = Connection.objects.create(user1=organization, user2=request.user.username)
+                connection.save()
             prof.organization = organization
             prof.save()
         else:
             context = {
                 'profile': prof,
+                'organizations': organizations,
                 'message': 'Error: Organization does not exist.',
                 'status': 'warning'
             }
@@ -246,6 +266,7 @@ def settings(request):
             if email in User.objects.all().values_list('email', flat=True):
                 context = {
                     'profile': prof,
+                    'organizations': organizations,
                     'message': 'Error: Email already exists.',
                     'status': 'warning'
                 }
@@ -263,17 +284,18 @@ def settings(request):
         prof.profile_pic = image_base64
         # print(image_base64)
         prof.save()
-
+        
         context = {
             'profile': prof,
+            'organizations': organizations,
             'message': 'Settings updated successfully.',
             'status': 'success'
         }
         return render(request, 'settings.html', context)
     
 
-    
     context = {
         'profile': prof,
+        'organizations': organizations,
     }
     return render(request, 'settings.html', context)
