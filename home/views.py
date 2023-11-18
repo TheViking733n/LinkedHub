@@ -31,6 +31,8 @@ def signup(request):
         messages = []
         if len(username) < 3:
             messages.append('Username must be at least 3 characters long.')
+        if username.isalnum() == False:
+            messages.append('Username must contain only letters and numbers.')
         if password1 != password2:
             messages.append('Passwords do not match.')
         if username in User.objects.all().values_list('username', flat=True):
