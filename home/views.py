@@ -92,10 +92,16 @@ def profile(request, username):
             conn_status = 'connected'
         context['conn_status'] = conn_status
 
+    if prof.organization:
+        organization = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{prof.organization}"')[0]
+        context['organization'] = organization
+    
     if request.user.is_authenticated and request.user.username == username:
-        ...
-        # pending_requests = PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE receiver = "{username}"')
+        if prof.organization:
+            suggestions = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE organization = "{prof.organization}" AND username != "{username}" AND username NOT IN (SELECT user2 FROM home_connection WHERE user1 = "{username}")')
+            context['suggestions'] = suggestions
 
+        # pending_requests = PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE receiver = "{username}"')
         with db_connection.cursor() as cursor:
             cursor.execute(f'''
                 SELECT sender, name

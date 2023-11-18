@@ -36,12 +36,22 @@
                         </div>
                     {% endfor %}
 
+
+                    {% if suggestions %}
+                        <h5>People you may know from <a href="/{{ profile.organization }}">{{ organization.name }}</a></h5>
+                        {% for suggestion in suggestions %}
+                            <p><a href="/{{ suggestion.username }}">{{ suggestion.name }}</a></p>
+                        {% endfor %}
+                    {% endif %}
+
                 {% endif %}
             </div>
             <div class="col-md-8">
                 <h2>{{ profile.name }}</h2>
                 <p>{{ profile.bio }}</p>
-                <p>{{ profile.organization }}</p>
+                {% if organization %}
+                    <p><a href="/{{ profile.organization }}">{{ organization.name }}</a></p>
+                {% endif %}
                 <h4>@{{ profile.username }}</h4>
                 <hr>
                 <p>Connections: {{ connections }}</p>
