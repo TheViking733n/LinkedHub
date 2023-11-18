@@ -25,12 +25,13 @@ SECRET_KEY = 'django-insecure-k^oea%(u*@s6j&wzru)_j7c_f-g7cwqm+l_j^v7+qwks8aaa&*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.vercel.app', '.now.sh']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -77,12 +78,23 @@ WSGI_APPLICATION = 'LinkedHub.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+from decouple import config
+# DATABASE_URL = config('POSTGRES_URL')
+DATABASE_URL = config('ELEPHANTSQL_URL')
+import dj_database_url
+DATABASES = {}
+DATABASES['default'] = dj_database_url.parse(
+    url=DATABASE_URL,
+    # conn_max_age=600,
+    # conn_health_checks=True,
+)
+
 
 
 # Password validation
@@ -123,6 +135,13 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+
+import os
+# For Vercel deployment
+STATICFILES_DIRS = os.path.join(BASE_DIR, 'static'),
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
@@ -131,3 +150,42 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Added by me
 LOGIN_URL = '/login/'
+
+
+JAZZMIN_SETTINGS = {
+    # title of the window (Will default to current_admin_site.site_title if absent or None)
+    "site_title": "LinkedHub Admin",
+
+    # Title on the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
+    "site_header": "LinkedHub",
+
+    # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
+    "site_brand": "LinkedHub",
+
+    # Logo to use for your site, must be present in static files, used for brand on top left
+    "site_logo": 'images/logo.png',
+
+    # Logo to use for your site, must be present in static files, used for login form logo (defaults to site_logo)
+    "login_logo": 'images/logo.png',
+
+    # Logo to use for login form in dark themes (defaults to login_logo)
+    "login_logo_dark": None,
+
+    # CSS classes that are applied to the logo above
+    "site_logo_classes": "img-circle",
+
+    # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
+    "site_icon": 'images/logo.png',
+
+    # Welcome text on the login screen
+    "welcome_sign": "Welcome to the LinkedHub Admin Panel",
+
+    # Copyright on the footer
+    "copyright": "LinkedHub Pvt. Ltd.",
+
+    # The model admin to search from the search bar, search bar omitted if excluded
+    "search_model": "auth.User",
+
+    # Field name on user model that contains avatar ImageField/URLField/Charfield or a callable that receives the user
+    "user_avatar": None
+}
