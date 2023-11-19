@@ -77,7 +77,10 @@ def logout(request):
 
 
 def profile(request, username):
-    prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{username}"')[0]
+    try:
+        prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{username}"')[0]
+    except:
+        return render(request, '404.html')
     posts = Post.objects.raw(f'SELECT * FROM post_post WHERE author_id = "{username}" ORDER BY timestamp DESC')
     # connections = prof.connections.split(',')
     connections = Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{username}"')
