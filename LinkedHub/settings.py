@@ -138,12 +138,10 @@ USE_TZ = True
 import os.path  
 import sys
 
-PROJECT_ROOT = os.path.normpath(os.path.dirname(__file__))
 import os
 # For Vercel deployment
 STATICFILES_DIRS = os.path.join(BASE_DIR, 'static'),
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
-STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
 
