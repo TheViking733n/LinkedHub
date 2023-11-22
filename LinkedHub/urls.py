@@ -7,7 +7,9 @@ admin.site.site_header = 'LinkedHub Admin Panel'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('admin', admin.site.urls),
     path('post/', include('post.urls')),
+    path('post', include('post.urls')),
     path('', include('home.urls')),
 ]
 
