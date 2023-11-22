@@ -78,12 +78,12 @@ def logout(request):
 
 def profile(request, username):
     try:
-        prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{username}"')[0]
+        prof = UserProfile.objects.raw(f"SELECT * FROM home_userprofile WHERE username = '{username}'")[0]
     except:
         return render(request, '404.html')
-    posts = Post.objects.raw(f'SELECT * FROM post_post WHERE author_id = "{username}" ORDER BY timestamp DESC')
+    posts = Post.objects.raw(f"SELECT * FROM post_post WHERE author_id = '{username}' ORDER BY timestamp DESC")
     # connections = prof.connections.split(',')
-    connections = Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{username}"')
+    connections = Connection.objects.raw(f"SELECT * FROM home_connection WHERE user1 = '{username}'")
     connections = len(connections)
     context = {
         'profile': prof,
@@ -95,32 +95,32 @@ def profile(request, username):
         mutual_connections = ['Not yet implemented.']
         context['mutual_connections'] = mutual_connections
         conn_status = 'not connected'
-        if PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{request.user.username}" AND receiver = "{username}"'):
+        if PendingRequest.objects.raw(f"SELECT * FROM home_pendingrequest WHERE sender = '{request.user.username}' AND receiver = '{username}'"):
             conn_status = 'pending'
-        elif PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{username}" AND receiver = "{request.user.username}"'):
+        elif PendingRequest.objects.raw(f"SELECT * FROM home_pendingrequest WHERE sender = '{username}' AND receiver = '{request.user.username}'"):
             conn_status = 'requested'
-        elif Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{username}"'):
+        elif Connection.objects.raw(f"SELECT * FROM home_connection WHERE user1 = '{request.user.username}' AND user2 = '{username}'"):
             conn_status = 'connected'
         context['conn_status'] = conn_status
 
     if prof.organization:
-        organization = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{prof.organization}"')[0]
+        organization = UserProfile.objects.raw(f"SELECT * FROM home_userprofile WHERE username = '{prof.organization}'")[0]
         context['organization'] = organization
     
     if request.user.is_authenticated and request.user.username == username:
         if prof.organization:
-            suggestions = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE organization = "{prof.organization}" AND username != "{username}" AND username NOT IN (SELECT user2 FROM home_connection WHERE user1 = "{username}")')
+            suggestions = UserProfile.objects.raw(f"SELECT * FROM home_userprofile WHERE organization = '{prof.organization}' AND username != '{username}' AND username NOT IN (SELECT user2 FROM home_connection WHERE user1 = '{username}')")
             context['suggestions'] = suggestions
 
         # pending_requests = PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE receiver = "{username}"')
         with db_connection.cursor() as cursor:
-            cursor.execute(f'''
+            cursor.execute(f"""
                 SELECT sender, name
                 FROM home_pendingrequest
                 LEFT JOIN home_userprofile
                 ON sender = username
-                WHERE receiver = "{request.user.username}";
-            ''')
+                WHERE receiver = '{request.user.username}';
+            """)
 
             pending_requests = []
             for row in cursor.fetchall():
