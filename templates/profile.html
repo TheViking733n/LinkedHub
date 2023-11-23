@@ -93,7 +93,19 @@
 
 
                 {% if mutual_connections %}
-                    <p>Mutual Connections: {{ mutual_connections }}</p>
+                    <p>Mutual Connections: 
+                    {% for mutual_connection in mutual_connections %}
+                        <a href="/{{ mutual_connection.username }}">{{ mutual_connection.username }}</a>, 
+                    {% endfor %}
+                    </p>
+                {% endif %}
+
+                {% if secondmutual_connections %}
+                    <p>Second Mutual Connections: 
+                    {% for secondmutual_connection in secondmutual_connections %}
+                        <a href="/{{ secondmutual_connection.username }}">{{ secondmutual_connection.username }}</a>, 
+                    {% endfor %}
+                    </p>
                 {% endif %}
                 <hr>
                 <h4>Posts</h4>

@@ -44,10 +44,15 @@ def signup(request):
             return render(request, 'signup.html', {'messages': messages})
         
         user = User.objects.create_user(first_name=name, username=username, email=email, password=password1)
-        user_profile = UserProfile.objects.create(name=name, username=username)
-        user_profile.is_organization = is_organization
-        user_profile.save()
+        # user_profile = UserProfile.objects.create(name=name, username=username)
+        # user_profile.is_organization = is_organization
+        # user_profile.save()
         user.save()
+        with db_connection.cursor() as cursor:
+            cursor.execute(f"""
+                INSERT INTO home_userprofile (username, name, profile_pic, bio, organization, is_organization)
+                VALUES ('{username}', '{name}', '', '', '', {is_organization});
+            """)
         return redirect('login')
     
     return render(request, 'signup.html')
@@ -94,8 +99,30 @@ def profile(request, username):
     }
     if request.user.is_authenticated and request.user.username != username:
         # mutual_connections = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"')[0].connections.split(',')
-        mutual_connections = ['Not yet implemented.']
+        # mutual_connections = ['Not yet implemented.']
+        with db_connection.cursor() as cursor:
+            u, v = request.user.username, username
+            cursor.execute(f"""SELECT mutualConnections('{u}', '{v}');""")
+            mutual_connections = cursor.fetchall()
+            print(mutual_connections)
+            _mutual_connections = []
+            for row in mutual_connections:
+                _mutual_connections.append({
+                    'username': row[0],
+                })
+            mutual_connections = _mutual_connections
+            cursor.execute(f"""SELECT secondMutualConnectionsFunc('{u}', '{v}');""")
+            secondmutual_connections = cursor.fetchall()
+            print(secondmutual_connections)
+            _secondmutual_connections = []
+            for row in secondmutual_connections:
+                _secondmutual_connections.append({
+                    'username': row[0],
+                })
+            secondmutual_connections = _secondmutual_connections
+
         context['mutual_connections'] = mutual_connections
+        context['secondmutual_connections'] = secondmutual_connections
         conn_status = 'not connected'
         if PendingRequest.objects.raw(f"SELECT * FROM home_pendingrequest WHERE sender = '{request.user.username}' AND receiver = '{username}'"):
             conn_status = 'pending'
@@ -171,7 +198,8 @@ def connect_accept(request):
         connection = Connection.objects.create(user1=receiver, user2=sender)
         connection.save()
         with db_connection.cursor() as cursor:
-            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'"))
+            # cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'"))
+            cursor.execute(f"CALL deleterequests('{receiver}', '{sender}')")
         
         return redirect('profile', username=sender)
     return HttpResponse('403 Forbidden')
@@ -188,7 +216,8 @@ def cancel_request(request):
         if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'")):
             return HttpResponse('Error: Request not found.')
         with db_connection.cursor() as cursor:
-            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'"))
+            # cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'"))
+            cursor.execute(f"CALL deleterequests('{receiver}', '{sender}')")
         return redirect('profile', username=receiver)
     return HttpResponse('403 Forbidden')
 
@@ -203,7 +232,8 @@ def connect_reject(request):
         if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'")):
             return HttpResponse('Error: Request not found.')
         with db_connection.cursor() as cursor:
-            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'"))
+            # cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'"))
+            cursor.execute(f"CALL deleterequests('{receiver}', '{sender}')")
         return redirect('profile', username=sender)
 
 
