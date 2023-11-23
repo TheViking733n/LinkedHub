@@ -142,11 +142,11 @@ def connect_request(request):
         receiver = request.POST['receiver']
         if sender == receiver:
             return HttpResponse('Error: Cannot send request to yourself.')
-        if Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{sender}" AND user2 = "{receiver}"'):
+        if Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{sender}" AND user2 = "{receiver}"'.replace('"', "'")):
             return HttpResponse('Error: Already connected.')
-        if PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'):
+        if PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'")):
             return HttpResponse('Error: Request already sent.')
-        if PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{receiver}" AND receiver = "{sender}"'):
+        if PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{receiver}" AND receiver = "{sender}"'.replace('"', "'")):
             return HttpResponse('Error: Request already received.')
         if receiver not in User.objects.all().values_list('username', flat=True):
             return HttpResponse('Error: Invalid username.')
@@ -163,13 +163,13 @@ def connect_accept(request):
         receiver = request.user.username
         if sender == receiver:
             return HttpResponse('Error: Cannot accept request from yourself.')
-        if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'):
+        if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'")):
             return HttpResponse('Error: Request not found.')
         connection = Connection.objects.create(user1=sender, user2=receiver)
         connection = Connection.objects.create(user1=receiver, user2=sender)
         connection.save()
         with db_connection.cursor() as cursor:
-            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"')
+            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'"))
         
         return redirect('profile', username=sender)
     return HttpResponse('403 Forbidden')
@@ -183,10 +183,10 @@ def cancel_request(request):
         receiver = request.POST['receiver']
         if sender == receiver:
             return HttpResponse('Error: Cannot cancel request to yourself.')
-        if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'):
+        if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'")):
             return HttpResponse('Error: Request not found.')
         with db_connection.cursor() as cursor:
-            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"')
+            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'"))
         return redirect('profile', username=receiver)
     return HttpResponse('403 Forbidden')
 
@@ -198,10 +198,10 @@ def connect_reject(request):
         receiver = request.user.username
         if sender == receiver:
             return HttpResponse('Error: Cannot reject request from yourself.')
-        if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'):
+        if not PendingRequest.objects.raw(f'SELECT * FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'")):
             return HttpResponse('Error: Request not found.')
         with db_connection.cursor() as cursor:
-            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"')
+            cursor.execute(f'DELETE FROM home_pendingrequest WHERE sender = "{sender}" AND receiver = "{receiver}"'.replace('"', "'"))
         return redirect('profile', username=sender)
 
 
@@ -213,11 +213,11 @@ def connect_remove(request):
         user2 = request.POST['receiver']
         if user1 == user2:
             return HttpResponse('Error: Cannot remove yourself.')
-        if not Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{user1}" AND user2 = "{user2}"'):
+        if not Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{user1}" AND user2 = "{user2}"'.replace('"', "'")):
             return HttpResponse('Error: Connection not found.')
         with db_connection.cursor() as cursor:
-            cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{user1}" AND user2 = "{user2}"')
-            cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{user2}" AND user2 = "{user1}"')
+            cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{user1}" AND user2 = "{user2}"'.replace('"', "'"))
+            cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{user2}" AND user2 = "{user1}"'.replace('"', "'"))
         return redirect('profile', username=user2)
 
 
@@ -225,8 +225,8 @@ def connect_remove(request):
 
 @login_required
 def settings(request):
-    prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"')[0]
-    organizations = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE is_organization = 1 AND username != "{request.user.username}"')
+    prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"'.replace('"', "'"))[0]
+    organizations = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE is_organization = 1 AND username != "{request.user.username}"'.replace('"', "'"))
     
     if request.method == 'POST':
         name = request.POST['name']
@@ -243,14 +243,14 @@ def settings(request):
                 'status': 'warning'
             }
             return render(request, 'settings.html', context)
-        elif organization == '' or UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{organization}"'):
+        elif organization == '' or UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{organization}"'.replace('"', "'")):
             # remove connection from previous organization
-            if Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{prof.organization}"'):
+            if Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{prof.organization}"'.replace('"', "'")):
                 with db_connection.cursor() as cursor:
-                    cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{prof.organization}"')
-                    cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{prof.organization}" AND user2 = "{request.user.username}"')
+                    cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{prof.organization}"'.replace('"', "'"))
+                    cursor.execute(f'DELETE FROM home_connection WHERE user1 = "{prof.organization}" AND user2 = "{request.user.username}"'.replace('"', "'"))
             # add connection to new organization
-            if not Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{organization}"'):
+            if not Connection.objects.raw(f'SELECT * FROM home_connection WHERE user1 = "{request.user.username}" AND user2 = "{organization}"'.replace('"', "'")):
                 connection = Connection.objects.create(user1=request.user.username, user2=organization)
                 connection.save()
                 connection = Connection.objects.create(user1=organization, user2=request.user.username)
@@ -283,7 +283,7 @@ def settings(request):
         request.user.first_name = name
         request.user.save()
     
-        prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"')[0]
+        prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"'.replace('"', "'"))[0]
         prof.name = name
         prof.bio = bio
         prof.profile_pic = image_base64
