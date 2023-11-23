@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
@@ -77,6 +77,8 @@ def logout(request):
 
 
 def profile(request, username):
+    if username == 'favicon.ico':
+        return HttpResponse('404 Not Found')
     try:
         prof = UserProfile.objects.raw(f"SELECT * FROM home_userprofile WHERE username = '{username}'")[0]
     except:
@@ -226,7 +228,7 @@ def connect_remove(request):
 @login_required
 def settings(request):
     prof = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE username = "{request.user.username}"'.replace('"', "'"))[0]
-    organizations = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE is_organization = 1 AND username != "{request.user.username}"'.replace('"', "'"))
+    organizations = UserProfile.objects.raw(f'SELECT * FROM home_userprofile WHERE is_organization = true AND username != "{request.user.username}"'.replace('"', "'"))
     
     if request.method == 'POST':
         name = request.POST['name']
